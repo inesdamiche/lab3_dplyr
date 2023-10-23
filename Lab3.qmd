@@ -1,0 +1,139 @@
+---
+title: "Lab3 Dplyr"
+format: html
+editor: visual
+echo: FALSE
+message: FALSE
+warning: FALSE
+---
+
+
+```{r}
+#| message: false
+#| cache: false
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+theme_set(theme_bw())
+here::i_am("lab3.dplyr.Rproj")
+dropout <- readRDS(file = 'dropout.Rds' )
+spotify <- readRDS(file ="top-spotify-hits-2000-2019.Rds")
+```
+
+# Exercice 1
+
+### Question 1
+
+```{r}
+nb_artists <- nrow(spotify %>% distinct(artist))
+nb_songs <- nrow(spotify %>% distinct(song))
+nb_genre <- nrow(spotify %>% distinct(genre))
+```
+
+The data set contains `r nb_songs` songs.
+
+### Question 2
+
+```{r}
+spotify |>
+  group_by(year)|>
+  distinct(song)|>
+  summarise(n())|>
+  knitr::kable()
+```
+
+### Question 3 
+
+```{r}
+most_pop <-
+  spotify |>
+  distinct(song,.keep_all = TRUE)|> #pour garder les autres variables 
+  group_by(artist)|>
+  summarise(n())|>
+  slice_max(`n()`) #pour selectionner la ligne qui correspond au max dans la colone n()
+```
+The most popular artist in the data set is `r most_pop[1]` with `r most_pop[2]` songs.
+
+### Question 4 
+```{r}
+spotify |>
+  distinct(song,.keep_all = TRUE)|>  
+  group_by(genre)|>
+  summarise('number of songs'=n(),'tempo median' = median(tempo), 'maximum' = max(tempo), 'minimum tempo'=min(tempo),'mean tempo'=mean(tempo))|>
+  knitr::kable()
+```
+
+### Question 5 
+```{r}
+df <- 
+  spotify |>
+  distinct(song,.keep_all = TRUE)|>  
+  group_by(year)|>
+  summarise('median energy'= median(energy), 'median danceability'=median(danceability))
+df|>
+  knitr::kable()
+```
+
+
+### Question 6 
+#### Median annual energy 
+```{r}
+ggplot(df, aes(x = year, y= `median energy`))+
+  geom_point()+
+  xlab('Year')+
+  ylab('Median energy')
+```
+
+#### Median danceability
+```{r}
+ggplot(df, aes(x = year, y= `median danceability`))+
+  geom_point()+
+  xlab('Year')+
+  ylab('Median danceability')
+```
+
+# Exercice 2
+
+### Question 1 
+```{r}
+dropout|>
+  group_by(Gender,`Marital status`)|>
+  summarise("Median age at enrollment"=median(`Age at enrollment`), .groups ="drop_last")|>
+  knitr::kable()
+  
+```
+
+### Question 2
+```{r}
+dropout |>
+  group_by(Gender, `Marital status`)|>
+  summarise(median= median(`Age at enrollment`), .groups="drop_last")|>
+  select(Gender,`Marital status`, median)|>
+  pivot_wider(values_from = median, names_from = Gender)|>
+  knitr::kable()
+```
+
+### Question 3
+```{r}
+cond_mean <- aggregate(. ~ Target, data =select(dropout, c(starts_with("Curricular units"), Target)) , FUN = mean)
+cond_mean|>
+  knitr::kable()
+```
+
+
+### Question 4
+```{r}
+options( "digits"=2)
+cond_mean|>
+  pivot_longer(cols = starts_with("Curricular units"), names_to = 'Units')|>
+  pivot_wider(values_from = value, names_from = Target)|>
+  knitr::kable()
+```
+
+
+
+
+
+
+
+
